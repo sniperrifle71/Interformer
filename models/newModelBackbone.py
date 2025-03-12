@@ -22,46 +22,60 @@ class Model(nn.Module):
 
         # patching and embedding
         self.patch_embedding = PatchEmbedding(self.d_model, self.patch_len, self.stride, padding, self.dropout)
+        self.raw_patch_embedding = PatchEmbedding(self.d_model, self.patch_len, self.stride, padding, self.dropout)
 
         # Encoder
         self.encoder = Encoder(
-            [
+            attn_layers=[
                 EncoderLayer(
                     AttentionLayer(
                         FullAttention(False, configs.factor, attention_dropout=configs.dropout,
-                                      output_attention=configs.output_attention), configs.d_model, configs.n_heads),
+                                    output_attention=configs.output_attention),
+                        configs.d_model,
+                        configs.n_heads
+                    ),
                     configs.d_model,
                     configs.d_ff,
                     dropout=configs.dropout,
                     activation=configs.activation
                 ) for l in range(configs.e_layers)
             ],
+            interpreter_layers=[
+                SeasonalityLayer(self.patch_len, configs.devices),
+                TrendLayer(self.patch_len, configs.devices)
+            ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
 
-        self.dec_embedding = PatchEmbedding(configs.dec_in, configs.d_model, configs.embed, configs.freq,
-                                               configs.dropout)
         self.decoder = Decoder(
-            [
-                DecoderLayer(
-                    AttentionLayer(
-                        FullAttention(True, configs.factor, attention_dropout=configs.dropout,
-                                        output_attention=False),
-                        configs.d_model, configs.n_heads),
-                    AttentionLayer(
-                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
-                                        output_attention=False),
-                        configs.d_model, configs.n_heads),
-                    configs.d_model,
-                    configs.d_ff,
-                    dropout=configs.dropout,
-                    activation=configs.activation,
-                )
-                for l in range(configs.d_layers)
-            ],
-            norm_layer=torch.nn.LayerNorm(configs.d_model),
-            projection=nn.Linear(configs.d_model, configs.c_out, bias=True)
-        )
+                [
+                    DecoderLayer(
+                        AttentionLayer(
+                            FullAttention(True, configs.factor, attention_dropout=configs.dropout,
+                                          output_attention=False),
+                            configs.d_model, configs.n_heads),
+                        AttentionLayer(
+                            FullAttention(False, configs.factor, attention_dropout=configs.dropout,
+                                          output_attention=False),
+                            configs.d_model, configs.n_heads),
+                        configs.d_model,
+                        configs.d_ff,
+                        dropout=configs.dropout,
+                        activation=configs.activation,
+                    )
+                    for l in range(configs.d_layers)
+                ],
+                norm_layer=torch.nn.LayerNorm(configs.d_model),
+
+            )
+        self.dec_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
+        self.backcast_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
+        self.enc_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
+        print(configs.quantilies)
+        self.quantile_proj = nn.Linear(self.d_model, self.d_model*len(configs.quantilies), bias=True)
+
+
+
 
 
         

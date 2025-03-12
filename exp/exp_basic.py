@@ -1,8 +1,8 @@
 import os
 
 import torch
-
-from models import TrmEncoder, Timer
+import torch.nn as nn
+from models import TrmEncoder, Timer, newModel
 
 
 class Exp_Basic(object):
@@ -11,7 +11,9 @@ class Exp_Basic(object):
         self.model_dict = {
             'TrmEncoder': TrmEncoder,
             'Timer': Timer,
+            'newModel': newModel
         }
+        self.vali_loss_func = nn.MSELoss()
         if self.args.use_multi_gpu:
             self.model = self._build_model()
             self.device = torch.device('cuda:{}'.format(self.args.local_rank))

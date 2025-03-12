@@ -18,7 +18,7 @@ do
 # train
 # num_workers = 4
 # --ckpt_path $ckpt_path \
-torchrun --nnodes=1 --nproc_per_node=4 ../../run_newModel_pretrain.py \
+torchrun --nnodes=1 --nproc_per_node=4 run_newModel_pretrain.py \
   --task_name pretrain \
   --model $model_name \
   --is_training 1 \

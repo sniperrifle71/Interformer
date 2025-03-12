@@ -36,8 +36,6 @@ class UTSDataset(Dataset):
 
     def __read_data__(self):
         dataset = datasets.load_dataset("utsd", self.subset_name, split='train')
-        print(dataset.info)
-        print(dataset[:5])
         # split='train' contains all the time series, which have not been divided into splits, 
         # you can split them by yourself, or use our default split as train:val = 9:1
         print('Indexing dataset...')
@@ -77,7 +75,7 @@ class UTSDataset(Dataset):
 
         s_begin = index % n_timepoint
         s_begin = self.stride * s_begin
-        s_end = s_begin + self.seq_len
+        s_end = s_begin + self.input_len
         p_begin = s_end
         p_end = p_begin + self.output_len
         seq_x = self.data_list[dataset_index][s_begin:s_end, :]

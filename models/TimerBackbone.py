@@ -36,7 +36,7 @@ class Model(nn.Module):
                     configs.d_ff,
                     dropout=configs.dropout,
                     activation=configs.activation,
-                    device = configs.device
+                    device = configs.devices
                 ) for l in range(configs.e_layers)
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
@@ -44,3 +44,4 @@ class Model(nn.Module):
 
         # Prediction Head
         self.proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
+
