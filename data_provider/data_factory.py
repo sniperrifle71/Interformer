@@ -100,7 +100,7 @@ def data_provider(args, flag):
     elif args.task_name == 'pretrain':
         data_set = data_dict[args.data](
                 flag=flag,
-                input_len=args.seq_len,
+                input_len=0,
                 output_len=args.seq_len,
         )
         if args.use_multi_gpu:

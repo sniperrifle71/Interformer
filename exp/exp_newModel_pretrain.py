@@ -26,6 +26,9 @@ class Exp_Pretrain(Exp_Basic):
         else:
             self.args.device = self.device
             model = self.model_dict[self.args.model].Model(self.args)
+        if self.args.is_finetuning:
+            checkpoint_path = os.path.join('../data/newModel/checkpoints/',self.args.ckpt_path,'checkpoint.pth')
+            model.load_state_dict(torch.load(checkpoint_path))
         return model
 
     def _get_data(self, flag):
@@ -141,8 +144,8 @@ class Exp_Pretrain(Exp_Basic):
                 # batch_x_mark = batch_x_mark.float().to(self.device)
                 # batch_y_mark = batch_y_mark.float().to(self.device)
 
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float()
+                # dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                # dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float()
                 if self.args.output_attention:
                     # output used to calculate loss misaligned patch_len compared to input
                     # outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -184,7 +187,7 @@ class Exp_Pretrain(Exp_Basic):
 
         print('Model parameters: ', sum(param.numel() for param in self.model.parameters()))
         attns = []
-        folder_path = './test_results/' + setting + '/' + self.args.data_path + '/' + f'{self.args.output_len}/'
+        folder_path = '../data/newModel/test_results/' + setting + '/' + self.args.data_path + '/' + f'{self.args.output_len}/'
         if not os.path.exists(folder_path) and int(os.environ.get("LOCAL_RANK", "0")) == 0:
             os.makedirs(folder_path)
         self.model.eval()
@@ -200,7 +203,9 @@ class Exp_Pretrain(Exp_Basic):
             for output_ptr in range(len(self.args.output_len_list)):
                 self.args.output_len = self.args.output_len_list[output_ptr]
                 test_data, test_loader = data_provider(self.args, flag='test')
-                for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+                for i, (batch_x, batch_y) in enumerate(test_loader):
+                    batch_x_mark = None
+                    batch_y_mark = None
                     batch_x = batch_x.float().to(self.device)
                     batch_y = batch_y.float().to(self.device)
 
@@ -215,16 +220,17 @@ class Exp_Pretrain(Exp_Basic):
                     for j in range(inference_steps):
                         if len(pred_y) != 0:
                             batch_x = torch.cat([batch_x[:, self.args.pred_len:, :], pred_y[-1]], dim=1)
-                            tmp = batch_y_mark[:, j - 1:j, :]
-                            batch_x_mark = torch.cat([batch_x_mark[:, 1:, :], tmp], dim=1)
+                            # tmp = batch_y_mark[:, j - 1:j, :]
+                            # batch_x_mark = torch.cat([batch_x_mark[:, 1:, :], tmp], dim=1)
 
                         if self.args.output_attention:
                             outputs, attns, _ = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            
                         else:
                             outputs, _ = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
+                        
                         f_dim = -1 if self.args.features == 'MS' else 0
-                        pred_y.append(outputs[:, -self.args.pred_len:, :, :])
+                        pred_y.append(outputs[:, -self.args.pred_len:, 1, :])
                     pred_y = torch.cat(pred_y, dim=1)
 
                     if dis != 0:
@@ -281,3 +287,102 @@ class Exp_Pretrain(Exp_Basic):
                 f.close()
 
         return
+
+    def finetune(self, setting):
+        finetune_data, finetune_loader = data_provider(self.args, flag='train')
+        vali_data, vali_loader = data_provider(self.args, flag='val')
+        test_data, test_loader = data_provider(self.args, flag='test')
+
+        path = os.path.join(self.args.checkpoints, setting)
+        if not os.path.exists(path) and int(os.environ.get("LOCAL_RANK", "0")) == 0:
+            os.makedirs(path)
+
+        time_now = time.time()
+
+        train_steps = len(finetune_loader)
+        early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
+
+        model_optim = self._select_optimizer()
+        criterion = self._select_criterion()
+
+        print('Model parameters: ', sum(param.numel() for param in self.model.parameters()))
+        scheduler = LargeScheduler(self.args, model_optim)
+
+
+        for epoch in range(self.args.finetune_epochs):
+            iter_count = 0
+
+            loss_val = torch.tensor(0., device="cuda")
+            count = torch.tensor(0., device="cuda")
+
+            self.model.train()
+            epoch_time = time.time()
+
+            print("Step number per epoch: ", len(finetune_loader))
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(finetune_loader):
+                iter_count += 1
+                model_optim.zero_grad()
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float().to(self.device)
+
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+
+                if self.args.output_attention:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+
+                if self.args.use_ims:
+                    # output used to calculate loss misaligned patch_len compared to input
+                    loss = criterion(outputs[:, -self.args.seq_len:, :], batch_y)
+                else:
+                    # only use the forecast window to calculate loss
+                    loss = criterion(outputs[:, -self.args.pred_len:, :], batch_y[:, -self.args.pred_len:, :])
+
+                loss_val += loss
+                count += 1
+
+                if i % 50 == 0:
+                    cost_time = time.time() - time_now
+                    print(
+                        "\titers: {0}, epoch: {1} | loss: {2:.7f} | cost_time: {3:.0f} | memory: allocated {4:.0f}MB, reserved {5:.0f}MB, cached {6:.0f}MB "
+                        .format(i, epoch + 1, loss.item(), cost_time,
+                                torch.cuda.memory_allocated() / 1024 / 1024,
+                                torch.cuda.memory_reserved() / 1024 / 1024,
+                                torch.cuda.memory_cached() / 1024 / 1024))
+                    time_now = time.time()
+
+                loss.backward()
+                model_optim.step()
+                torch.cuda.empty_cache()
+
+            print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+            if self.args.use_multi_gpu:
+                dist.barrier()
+                dist.all_reduce(loss_val, op=dist.ReduceOp.SUM)
+                dist.all_reduce(count, op=dist.ReduceOp.SUM)
+            train_loss = loss_val.item() / count.item()
+
+            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            if self.args.train_test:
+                test_loss = self.vali(test_data, test_loader, criterion, flag='test')
+                print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
+                    epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            else:
+                print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
+                    epoch + 1, train_steps, train_loss, vali_loss))
+
+
+            early_stopping(vali_loss, self.model, path)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+            scheduler.schedule_epoch(epoch)
+
+        best_model_path = path + '/' + 'checkpoint.pth'
+        if self.args.use_multi_gpu:
+            dist.barrier()
+        self.model.load_state_dict(torch.load(best_model_path))
+
+        return self.model

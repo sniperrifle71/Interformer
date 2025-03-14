@@ -444,6 +444,7 @@ class UTSDataset(Dataset):
 
         self.data_list = []
         self.n_window_list = []
+        self.backup_list = []
 
         self.subset_name = subset_name
         self.__read_data__()
@@ -454,11 +455,10 @@ class UTSDataset(Dataset):
         # split='train' contains all the time series, which have not been divided into splits, 
         # you can split them by yourself, or use our default split as train:val = 9:1
         # train:val:test = 8:1:1
-        # dataset = dataset.select(range(10000))
         print('Indexing dataset...')
-        total_rows = len(dataset)  # 获取数据集的总行数
-        last_1000_indices = range(total_rows - 100, total_rows)  # 计算最后1000行的索引范围
-        dataset = dataset.select(last_1000_indices)  # 选择最后1000行数据
+        # total_rows = len(dataset)  # 获取数据集的总行数
+        # last_1000_indices = range(total_rows - 10000, total_rows)  # 计算最后10000行的索引范围
+        # dataset = dataset.select(last_1000_indices)  # 选择最后1000行数据
         print(len(dataset))
         for item in tqdm(dataset):
             self.scaler = StandardScaler()
@@ -467,9 +467,8 @@ class UTSDataset(Dataset):
             num_train = int(len(data) * self.split)
             num_vali = int(len(data) * 0.1)
             num_test = len(data) - num_train - num_vali
-            border1s = [0, num_train - self.input_len, len(data) - num_test - self.input_len]
+            border1s = [0, num_train - self.seq_len, len(data) - num_test - self.seq_len]
             border2s = [num_train, num_train + num_vali, len(data)]
-
             border1 = border1s[self.set_type]
             border2 = border2s[self.set_type]
 
@@ -482,12 +481,33 @@ class UTSDataset(Dataset):
             data = data[border1:border2]
             n_window = (len(data) - self.seq_len) // self.stride + 1
             if n_window < 1:
+                # print("Data {}: {} length too small".format(item['item_id'], len(item['target'])))
+                self.backup_list+=item['target']
                 continue
 
             self.data_list.append(data)
             self.n_window_list.append(n_window if len(self.n_window_list) == 0 else self.n_window_list[-1] + n_window)
-            print
+            if len(self.backup_list)>2880:
+                data = np.array(self.backup_list).reshape(-1, 1)
+                num_train = int(len(data) * self.split)
+                num_vali = int(len(data) * 0.1)
+                num_test = len(data) - num_train - num_vali
+                border1s = [0, num_train - self.seq_len, len(data) - num_test - self.seq_len]
+                border2s = [num_train, num_train + num_vali, len(data)]
+                border1 = border1s[self.set_type]
+                border2 = border2s[self.set_type]
 
+                if self.scale:
+                    train_data = data[border1s[0]:border2s[0]]
+                    self.scaler.fit(train_data)
+
+                    data = self.scaler.transform(data)
+
+                data = data[border1:border2]
+                n_window = (len(data) - self.seq_len) // self.stride + 1
+                self.data_list.append(data)
+                self.n_window_list.append(n_window if len(self.n_window_list) == 0 else self.n_window_list[-1] + n_window)
+                self.backup_list = []
 
     def __getitem__(self, index):
         # you can wirte your own processing code here
@@ -500,7 +520,7 @@ class UTSDataset(Dataset):
 
         s_begin = index % n_timepoint
         s_begin = self.stride * s_begin
-        s_end = s_begin + self.input_len
+        s_end = s_begin + self.seq_len
         p_begin = s_end
         p_end = p_begin + self.output_len
         seq_x = self.data_list[dataset_index][s_begin:s_end, :]

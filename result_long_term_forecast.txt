@@ -1,0 +1,60 @@
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el2_dl1_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_10-41-01  
+mse:0.3157397508621216, mae:0.46572816371917725
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el2_dl1_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_10-41-01  
+mse:0.3198913037776947, mae:0.4652273654937744
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el2_dl1_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_10-41-01  
+mse:0.3098893463611603, mae:0.4631768465042114
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el2_dl1_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_10-41-01  
+mse:0.3069320321083069, mae:0.45535439252853394
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_14-52-59  
+mse:0.2723589837551117, mae:0.42497292160987854
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_14-52-59  
+mse:0.282813161611557, mae:0.4327201545238495
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_14-52-59  
+mse:0.2934114933013916, mae:0.43761447072029114
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_14-52-59  
+mse:0.27572110295295715, mae:0.43071073293685913
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-14-51  
+mse:0.27572110295295715, mae:0.43071073293685913
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-14-51  
+mse:0.282813161611557, mae:0.4327201545238495
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-14-51  
+mse:0.2934114933013916, mae:0.43761447072029114
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-14-51  
+mse:0.2723589837551117, mae:0.42497292160987854
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-17-36  
+mse:7.734940528869629, mae:0.4602588415145874
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-17-36  
+mse:1.8269463777542114, mae:0.33722105622291565
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-17-36  
+mse:7.74745512008667, mae:0.4553832411766052
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_15-17-36  
+mse:1.8167636394500732, mae:0.33159583806991577
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_16-31-03  
+mse:0.291224867105484, mae:0.2128308117389679
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_16-31-03  
+mse:0.29043716192245483, mae:0.21465452015399933
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_16-31-03  
+mse:0.7924843430519104, mae:0.22543548047542572
+
+pretrain_etth1_sr_0.01_newModel_UTSD_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-13_16-31-03  
+mse:0.7857995629310608, mae:0.22479715943336487
+

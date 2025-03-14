@@ -22,6 +22,7 @@ class Exp_Forecast(Exp_Basic):
     def _build_model(self):
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = self.model_dict[self.args.model].Model(self.args)
+            
             model = DDP(model.cuda(), device_ids=[self.args.local_rank], find_unused_parameters=True)
         else:
             self.args.device = self.device
@@ -82,10 +83,10 @@ class Exp_Forecast(Exp_Basic):
                 batch_y = batch_y.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.seq_len, :], dec_inp], dim=1).float().to(self.device)
-                dec_inp_mark = None
+                # decoder input，没用上
+                # dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                # dec_inp = torch.cat([batch_y[:, :self.args.seq_len, :], dec_inp], dim=1).float().to(self.device)
+                # dec_inp_mark = None
 
                 outputs = self.model(batch_x, batch_x_mark, None, None)
 
@@ -142,6 +143,7 @@ class Exp_Forecast(Exp_Basic):
                 batch_x_mark = batch_x_mark.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
+                # Timer不使用dec_inp参数,无视
                 dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
                 dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float()
                 if self.args.output_attention:

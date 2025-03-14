@@ -14,9 +14,8 @@ do
 # train
 torchrun --nnodes=1 --nproc_per_node=4 run.py \
   --task_name forecast \
-  --is_training 0 \
+  --is_training 1 \
   --seed 1 \
-  --ckpt_path $ckpt_path \
   --root_path ./dataset/ETT-small/ \
   --data_path $data.csv \
   --data $data \

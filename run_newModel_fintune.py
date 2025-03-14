@@ -8,14 +8,12 @@ import torch
 import torch.distributed as dist
 
 from exp.exp_forecast import Exp_Forecast
-from exp.exp_newModel_forecast import Exp_Forecast
 from exp.exp_anomaly_detection import Exp_Anomaly_Detection
 from exp.exp_imputation import Exp_Imputation
-from exp.exp_newModel_pretrain import Exp_Pretrain
 from utils.tools import HiddenPrints
 
 if __name__ == '__main__':
-    print('start')
+
     parser = argparse.ArgumentParser(description='Large Time Series Model')
 
     # basic config
@@ -36,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
     parser.add_argument('--freq', type=str, default='h',
                         help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-    parser.add_argument('--checkpoints', type=str, default='../data/newModel/checkpoints/', help='location of model checkpoints')
+    parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
     parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
 
@@ -56,10 +54,7 @@ if __name__ == '__main__':
                         help='time features encoding, options:[timeF, fixed, learned]')
     parser.add_argument('--activation', type=str, default='gelu', help='activation')
     parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
-    parser.add_argument('--quantile_flag', type= bool, help='quantile loss flag', default=False)
-    default_quantilies = [0.25, 0.5, 0.75]
-    parser.add_argument('--quantilies', nargs='*', type=float, default=default_quantilies, help='quantiles for quantile loss')
-    
+
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
@@ -143,10 +138,8 @@ if __name__ == '__main__':
         Exp = Exp_Imputation
     elif args.task_name == 'anomaly_detection':
         Exp = Exp_Anomaly_Detection
-    elif args.task_name == 'forecast' and (args.is_fintuning == 0):
+    elif args.task_name == 'forecast':
         Exp = Exp_Forecast
-    elif args.task_name == 'pretrain' or (args.is_fintuning == 0 and args.task_name == 'forecast'):
-        Exp = Exp_Pretrain
     else:
         raise ValueError('task name not found')
 
@@ -185,38 +178,6 @@ if __name__ == '__main__':
                 print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                 exp.test(setting)
                 torch.cuda.empty_cache()
-        elif args.is_training:
-            for ii in range(args.itr):
-                # setting record of experiments
-                setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}'.format(
-                    args.task_name,
-                    args.model_id,
-                    args.model,
-                    args.data,
-                    args.features,
-                    args.seq_len,
-                    args.label_len,
-                    args.pred_len,
-                    args.patch_len,
-                    args.d_model,
-                    args.n_heads,
-                    args.e_layers,
-                    args.d_layers,
-                    args.d_ff,
-                    args.factor,
-                    args.embed,
-                    args.distil,
-                    args.des,
-                    ii)
-                setting += datetime.now().strftime("%y-%m-%d_%H-%M-%S")
-
-                exp = Exp(args)  # set experiments
-                print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-                exp.train(setting)
-
-                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                exp.test(setting)
-                torch.cuda.empty_cache()
         else:
             ii = 0
             setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}'.format(
@@ -244,5 +205,3 @@ if __name__ == '__main__':
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             exp.test(setting, test=1)
             torch.cuda.empty_cache()
-
-
