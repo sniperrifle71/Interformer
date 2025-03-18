@@ -41,8 +41,8 @@ class Model(nn.Module):
                 ) for l in range(configs.e_layers)
             ],
             interpreter_layers=[
-                SeasonalityLayer(self.patch_len, configs.devices),
-                TrendLayer(self.patch_len, configs.devices)
+                SeasonalityLayer(theta_dim=100, device = configs.devices, backcast_length=configs.d_model*configs.token_len, forecast_length=configs.d_model*configs.token_len),
+                TrendLayer(theta_dim=4, device = configs.devices, backcast_length=configs.d_model*configs.token_len, forecast_length=configs.d_model*configs.token_len)
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
@@ -71,7 +71,6 @@ class Model(nn.Module):
         self.dec_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
         self.backcast_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
         self.enc_proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
-        print(configs.quantilies)
         self.quantile_proj = nn.Linear(self.d_model, self.d_model*len(configs.quantilies), bias=True)
 
 
