@@ -12,22 +12,22 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.metrics import metric
-from utils.tools import EarlyStopping, visual, LargeScheduler, attn_map, adjust_learning_rate
+from utils.tools import EarlyStopping, visual, LargeScheduler, attn_map, adjust_learning_rate, visual_multi
 from utils.losses import forecast_backcast_qt_loss
 warnings.filterwarnings('ignore')
 
 
-class Exp_Pretrain(Exp_Basic):
+class Exp_newModel_forecast(Exp_Basic):
 
     def _build_model(self):
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = self.model_dict[self.args.model].Model(self.args)
-            model = DDP(model.cuda(), device_ids=[self.args.local_rank], find_unused_parameters=True)
+            model = DDP(model.cuda(), device_ids=[self.args.local_rank], find_unused_parameters=False)
         else:
             self.args.device = self.device
             model = self.model_dict[self.args.model].Model(self.args)
         if self.args.is_finetuning:
-            checkpoint_path = os.path.join('../data/newModel/checkpoints/',self.args.ckpt_path,'checkpoint.pth')
+            checkpoint_path = os.path.join(self.args.checkpoints,self.args.ckpt_path,'checkpoint.pth')
             model.load_state_dict(torch.load(checkpoint_path))
         return model
 
@@ -76,7 +76,7 @@ class Exp_Pretrain(Exp_Basic):
             epoch_time = time.time()
             print("Epoch: {}/{} starts, estimated cost time: {}".format(epoch + 1, self.args.train_epochs,
                                                                         time.time() - epoch_time))
-            for i, (batch_x, batch_y) in enumerate(train_loader):
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
@@ -92,7 +92,7 @@ class Exp_Pretrain(Exp_Basic):
 
                 outputs, backcast = self.model(batch_x, None, None, None) # [B, T, Q, M], [B, T, M]
                 f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:, :]
+                outputs = outputs[:, -self.args.pred_len:, :, f_dim:]
                 backcast = backcast[:, :self.args.seq_len, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                 # batch_y_mark = batch_y_mark[:, -self.args.pred_len:, f_dim:].to(self.device)
@@ -126,7 +126,7 @@ class Exp_Pretrain(Exp_Basic):
         print("Training finished,  best validation loss: {}"
               .format(early_stopping.val_loss_min))
 
-        best_model_path = path + '/' + 'checkpoint.pth'
+        # best_model_path = path + '/' + 'checkpoint.pth'
         # self.model.load_state_dict(torch.load(best_model_path, map_location = 'cuda:0'))
         torch.save(self.model.state_dict(), path + '/' + 'checkpoint.pth')
 
@@ -137,7 +137,7 @@ class Exp_Pretrain(Exp_Basic):
         total_count = []
         self.model.eval()
         with torch.no_grad():
-            for i, (batch_x, batch_y) in enumerate(vali_loader):
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
@@ -155,7 +155,8 @@ class Exp_Pretrain(Exp_Basic):
                     # outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                     outputs, _ = self.model(batch_x, None, None, None)
                 
-                accurate_outputs = outputs[:, :, 1, :]
+                pred_true_idx = self.args.quantilies.index(0.5)
+                accurate_outputs = outputs[:, :, pred_true_idx, :]
                 if self.args.use_ims:
                     pred = accurate_outputs[:, -self.args.seq_len:, :]
                     true = batch_y
@@ -187,7 +188,7 @@ class Exp_Pretrain(Exp_Basic):
 
         print('Model parameters: ', sum(param.numel() for param in self.model.parameters()))
         attns = []
-        folder_path = '../data/newModel/test_results/' + setting + '/' + self.args.data_path + '/' + f'{self.args.output_len}/'
+        folder_path = '../../../data/newModel/test_results/' + setting + '/' + self.args.data_path + '/' + f'{self.args.output_len}/'
         if not os.path.exists(folder_path) and int(os.environ.get("LOCAL_RANK", "0")) == 0:
             os.makedirs(folder_path)
         self.model.eval()
@@ -203,7 +204,7 @@ class Exp_Pretrain(Exp_Basic):
             for output_ptr in range(len(self.args.output_len_list)):
                 self.args.output_len = self.args.output_len_list[output_ptr]
                 test_data, test_loader = data_provider(self.args, flag='test')
-                for i, (batch_x, batch_y) in enumerate(test_loader):
+                for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
                     batch_x_mark = None
                     batch_y_mark = None
                     batch_x = batch_x.float().to(self.device)
@@ -217,6 +218,7 @@ class Exp_Pretrain(Exp_Basic):
                     if dis != 0:
                         inference_steps += 1
                     pred_y = []
+                    pred_true_idx = self.args.quantilies.index(0.5)
                     for j in range(inference_steps):
                         if len(pred_y) != 0:
                             batch_x = torch.cat([batch_x[:, self.args.pred_len:, :], pred_y[-1]], dim=1)
@@ -224,13 +226,15 @@ class Exp_Pretrain(Exp_Basic):
                             # batch_x_mark = torch.cat([batch_x_mark[:, 1:, :], tmp], dim=1)
 
                         if self.args.output_attention:
-                            outputs, attns, _ = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            outputs, attns, backcast = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            outputs_quantile = outputs
                             
                         else:
-                            outputs, _ = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            outputs, backcast = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            outputs_quantile = outputs
                         
                         f_dim = -1 if self.args.features == 'MS' else 0
-                        pred_y.append(outputs[:, -self.args.pred_len:, 1, :])
+                        pred_y.append(outputs[:, -self.args.pred_len:, pred_true_idx, :])
                     pred_y = torch.cat(pred_y, dim=1)
 
                     if dis != 0:
@@ -243,13 +247,25 @@ class Exp_Pretrain(Exp_Basic):
                         batch_y = batch_y[:, :self.args.output_len, :].to(self.device)
                     outputs = pred_y.detach().cpu()
                     batch_y = batch_y.detach().cpu()
+                    outputs_quantile = outputs_quantile.detach().cpu()
+                    
 
                     if test_data.scale and self.args.inverse:
                         shape = outputs.shape
                         outputs = test_data.inverse_transform(outputs.squeeze(0)).reshape(shape)
                         batch_y = test_data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
 
+                    backcast = backcast.detach().cpu().numpy()
+                    outputs_quantile = outputs_quantile.detach().cpu().numpy()
+
+                    quantile_pred_list = []
+                    for idx in self.args.quantilies:
+                        quantile_idx = self.args.quantilies.index(idx)
+                        quantile_pred = outputs_quantile[:, :, quantile_idx, :]
+                        quantile_pred_list.append(quantile_pred)
+
                     outputs = outputs[:, :, f_dim:]
+                    backcast = backcast[:, :, f_dim:]
                     batch_y = batch_y[:, :, f_dim:]
 
                     pred = outputs
@@ -259,15 +275,24 @@ class Exp_Pretrain(Exp_Basic):
                     trues_list[output_ptr].append(true)
                     if i % 10 == 0:
                         input = batch_x.detach().cpu().numpy()
-                        gt = np.concatenate((input[0, -self.args.pred_len:, -1], true[0, :, -1]), axis=0)
-                        pd = np.concatenate((input[0, -self.args.pred_len:, -1], pred[0, :, -1]), axis=0)
-
+                        gt = true[0, 0:500, -1]
+                        pd = pred[0, 0:500, -1]
+                        bc = backcast[0, 0:500, -1]
+                        quantile_pred_list = [quantile_pred[0, 0:500, -1] for quantile_pred in quantile_pred_list]
                         if self.args.local_rank == 0:
                             if self.args.output_attention:
                                 attn = attns[0].cpu().numpy()[0, 0, :, :]
                                 attn_map(attn, os.path.join(folder_path, f'attn_{i}_{self.args.local_rank}.pdf'))
 
                             visual(gt, pd, os.path.join(folder_path, f'{i}_{self.args.local_rank}.pdf'))
+                            
+                            visual_multi(gt, quantile_pred_list, os.path.join(folder_path, f'multi_{i}_{self.args.local_rank}.pdf'))
+                            
+                            
+
+                            if self.args.output_interpretability:
+                                visual(gt, bc, os.path.join(folder_path, f'backcast_{i}_{self.args.local_rank}.pdf'))
+                                
 
         if self.args.output_len_list is not None:
             for i in range(len(preds_list)):
@@ -329,16 +354,16 @@ class Exp_Pretrain(Exp_Basic):
                 dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
 
                 if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    outputs, attns, backcast = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                    outputs, backcast = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 if self.args.use_ims:
                     # output used to calculate loss misaligned patch_len compared to input
-                    loss = criterion(outputs[:, -self.args.seq_len:, :], batch_y)
+                    loss = criterion(outputs[:, -self.args.seq_len:, :], batch_y, backcast, batch_x)
                 else:
                     # only use the forecast window to calculate loss
-                    loss = criterion(outputs[:, -self.args.pred_len:, :], batch_y[:, -self.args.pred_len:, :])
+                    loss = criterion(outputs[:, -self.args.pred_len:, :], batch_y[:, -self.args.pred_len:, :], backcast, batch_x)
 
                 loss_val += loss
                 count += 1
@@ -384,5 +409,30 @@ class Exp_Pretrain(Exp_Basic):
         if self.args.use_multi_gpu:
             dist.barrier()
         self.model.load_state_dict(torch.load(best_model_path))
+
+
+        seasonal_params = self.model.module.backbone.encoder.interpreter_layers[0].state_dict()
+        torch.save(seasonal_params, path + '/' + 'seasonal_params.pth')
+        trend_params = self.model.module.backbone.encoder.interpreter_layers[1].state_dict()
+        torch.save(trend_params, path + '/' + 'trend_params.pth')
+        
+        encoder_params = self.model.module.backbone.encoder.state_dict()
+        torch.save(encoder_params, path + '/' + 'encoder_params.pth')
+
+        enc_proj_params = self.model.module.backbone.enc_proj.state_dict()
+        torch.save(enc_proj_params, path + '/' + 'enc_proj_params.pth')
+
+        backcast_proj_params = self.model.module.backbone.backcast_proj.state_dict()
+        torch.save(backcast_proj_params, path + '/' + 'backcast_proj_params.pth')
+
+        enc_embedding_params = self.model.module.backbone.patch_embedding.state_dict()
+        torch.save(enc_embedding_params, path + '/' + 'enc_embedding_params.pth')
+
+
+
+
+
+        for name, param in self.model.named_parameters():
+            print(name)
 
         return self.model

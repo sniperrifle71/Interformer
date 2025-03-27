@@ -18,6 +18,7 @@ class Model(nn.Module):
         self.d_layers = configs.d_layers
         self.n_heads = configs.n_heads
         self.dropout = configs.dropout
+        self.theta_dim = configs.theta_dim
         padding = 0
 
         # patching and embedding
@@ -41,7 +42,7 @@ class Model(nn.Module):
                 ) for l in range(configs.e_layers)
             ],
             interpreter_layers=[
-                SeasonalityLayer(theta_dim=100, device = configs.devices, backcast_length=configs.d_model*configs.token_len, forecast_length=configs.d_model*configs.token_len),
+                SeasonalityLayer(theta_dim=self.theta_dim, device = configs.devices, backcast_length=configs.d_model*configs.token_len, forecast_length=configs.d_model*configs.token_len),
                 TrendLayer(theta_dim=4, device = configs.devices, backcast_length=configs.d_model*configs.token_len, forecast_length=configs.d_model*configs.token_len)
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)

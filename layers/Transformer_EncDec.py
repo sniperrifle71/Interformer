@@ -5,15 +5,21 @@ import numpy as np
 
 
 def seasonality_model(thetas, t, device):
+    if device != 'cpu':
+        local_rank = torch.distributed.get_rank()
+        device = f'cuda:{local_rank}'
     p = thetas.size()[-1]
-    assert p <= thetas.shape[1], 'thetas_dim is too big.'
+    assert p <= t.shape[0], 'thetas_dim is too big.'
     p1, p2 = (p // 2, p // 2) if p % 2 == 0 else (p // 2, p // 2 + 1)
-    s1 = torch.tensor([np.cos(2 * np.pi * i * t) for i in range(p1)]).float()  # H/2-1
-    s2 = torch.tensor([np.sin(2 * np.pi * i * t) for i in range(p2)]).float()
+    s1 = torch.tensor(np.array([np.cos(2 * np.pi * i * t) for i in range(p1)])).float()  # H/2-1
+    s2 = torch.tensor(np.array([np.sin(2 * np.pi * i * t) for i in range(p2)])).float()
     S = torch.cat([s1, s2])
     return thetas.mm(S.to(device))# 矩阵乘法
 
 def trend_model(thetas, t, device):
+    if device != 'cpu':
+        local_rank = torch.distributed.get_rank()
+        device = f'cuda:{local_rank}'
     p = thetas.size()[-1]
     assert p <= 4, 'thetas_dim is too big.'
     T = torch.tensor([t ** i for i in range(p)]).float()
@@ -47,7 +53,7 @@ class ConvLayer(nn.Module):
 
 class SeasonalityLayer(nn.Module):
 
-    def __init__(self, theta_dim, device, backcast_length=10, forecast_length=5):
+    def __init__(self, theta_dim, device, backcast_length, forecast_length):
         super().__init__()
         self.device = device
         self.backcast_length = backcast_length
@@ -57,18 +63,19 @@ class SeasonalityLayer(nn.Module):
         self.theta_fc = nn.Linear(self.backcast_length, self.theta_dim)
 
     def forward(self, x):
-        thetas = self.theta_fc(x)
         B, L, D = x.shape
-        x = x.reshape(B * D, L, 1)
+        x = x.reshape(B, D * L)
+        thetas = self.theta_fc(x)
         backcast = seasonality_model(thetas, self.backcast_linspace, self.device)
-        forecast = seasonality_model(thetas, self.forecast_linspace, self.device)
-        backcast = backcast.reshape(B, self.backcast_length, D)
-        forecast = forecast.reshape(B, self.forecast_length, D)
-        x = torch.cat([backcast, forecast], dim=1)
+        # forecast = seasonality_model(thetas, self.forecast_linspace, self.device)
+        backcast = backcast.reshape(B, L, D)
+        x = backcast
+        # forecast = forecast.reshape(B, self.forecast_length, D)
+        # x = torch.cat([backcast, forecast], dim=1)
         return x
     
 class TrendLayer(nn.Module):
-    def __init__(self, theta_dim, device, backcast_length=10, forecast_length=5):
+    def __init__(self, theta_dim, device, backcast_length, forecast_length):
         super().__init__()
         self.device = device
         self.backcast_length = backcast_length
@@ -78,14 +85,15 @@ class TrendLayer(nn.Module):
         self.theta_fc = nn.Linear(self.backcast_length, self.theta_dim)
 
     def forward(self, x):
-        thetas = self.theta_fc(x)
         B, L, D = x.shape
-        x = x.reshape(B * D, L, 1)
+        x = x.reshape(B, D * L)
+        thetas = self.theta_fc(x)
         backcast = trend_model(thetas, self.backcast_linspace, self.device)
-        forecast = trend_model(thetas, self.forecast_linspace, self.device)
-        backcast = backcast.reshape(B, self.backcast_length, D)
-        forecast = forecast.reshape(B, self.forecast_length, D)
-        x = torch.cat([backcast, forecast], dim=1)
+        # forecast = trend_model(thetas, self.forecast_linspace, self.device)
+        backcast = backcast.reshape(B, L, D)
+        # forecast = forecast.reshape(B, self.forecast_length, D)
+        # x = torch.cat([backcast, forecast], dim=1)
+        x = backcast
         return x
 
 
@@ -138,9 +146,13 @@ class Encoder(nn.Module):
             x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
             attns.append(attn)
         else:
-            for attn_layer in self.attn_layers:
+            for i, (attn_layer, interpreter_layer) in enumerate(zip(self.attn_layers, self.interpreter_layers)):
+                delta = delta if i == 0 else None
                 x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
+                x = interpreter_layer(x)
                 attns.append(attn)
+            x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
+            attns.append(attn)
 
         if self.norm is not None:
             x = self.norm(x)

@@ -18,13 +18,14 @@ do
 # train
 # num_workers = 4
 # --ckpt_path $ckpt_path \
-torchrun --nnodes=1 --nproc_per_node=4 run_newModel.py \
+torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --task_name pretrain \
   --model $model_name \
   --is_training 1 \
   --is_finetuning 0 \
   --seed 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../../data/raw_data/ETT/ \
+  --checkpoints ../../../data/newModel/checkpoints/ \
   --data_path $data.csv \
   --data $data \
   --model_id etth1_sr_$subset_rand_ratio \
@@ -51,6 +52,7 @@ torchrun --nnodes=1 --nproc_per_node=4 run_newModel.py \
   --gpu 0 \
   --quantile_flag 1 \
   --quantilies 0.25 0.5 0.75 \
+  --theta_dim 500 \
   --use_ims \
   --use_multi_gpu
 done

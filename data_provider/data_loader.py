@@ -426,7 +426,7 @@ class UCRAnomalyloader(Dataset):
 All single-variate series in UTSD are divided into (input-output) windows with a uniform length based on S3.
 """
 class UTSDataset(Dataset):
-    def __init__(self, subset_name=r'UTSD-1G', flag='train', split=0.9,
+    def __init__(self, subset_name=r'UTSD-4G', flag='train', split=0.9,
                  input_len=None, output_len=None, scale=True, stride=1):
         self.input_len = input_len
         self.output_len = output_len
@@ -456,9 +456,7 @@ class UTSDataset(Dataset):
         # you can split them by yourself, or use our default split as train:val = 9:1
         # train:val:test = 8:1:1
         print('Indexing dataset...')
-        # total_rows = len(dataset)  # 获取数据集的总行数
-        # last_1000_indices = range(total_rows - 10000, total_rows)  # 计算最后10000行的索引范围
-        # dataset = dataset.select(last_1000_indices)  # 选择最后1000行数据
+
         print(len(dataset))
         for item in tqdm(dataset):
             self.scaler = StandardScaler()
@@ -529,7 +527,9 @@ class UTSDataset(Dataset):
         if seq_y.shape[0] <self.output_len:
             padding_size = self.output_len - seq_y.shape[0]
             seq_y = np.concatenate([seq_y, np.zeros((padding_size,1))], axis=0)
-        return seq_x, seq_y
+        seq_x_mark = np.zeros((seq_x.shape))
+        seq_y_mark = np.zeros((seq_y.shape))
+        return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
         return self.n_window_list[-1]

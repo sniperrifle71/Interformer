@@ -45,6 +45,8 @@ class forecast_backcast_qt_loss(nn.Module):
             self.quantile_list = quantile_list
 
     def forward(self, forecast: t.Tensor, batch_y: t.Tensor, backcast: t.Tensor = None, batch_x: t.Tensor = None) -> t.Tensor:
+        assert 0.5 in self.quantile_list, "0.5 should be in the quantile list"
+        
         if not self.quantile_flag:
             forecast = torch.squeeze(forecast, dim=2)
             forecast_loss = self.forecast_func(forecast, batch_y)

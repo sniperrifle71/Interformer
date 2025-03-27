@@ -11,7 +11,7 @@ class Exp_Basic(object):
         self.model_dict = {
             'TrmEncoder': TrmEncoder,
             'Timer': Timer,
-            'newModel': newModel
+            'newModel': newModel,
         }
         self.vali_loss_func = nn.MSELoss()
         if self.args.use_multi_gpu:
