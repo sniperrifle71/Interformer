@@ -9,7 +9,7 @@ label_len=0
 pred_len=96
 output_len=1440
 patch_len=96
-ckpt_path=forecast_etth1_sr_0.01_newModel_ETTh1_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-03-18_11-20-04
+ckpt_path=forecast_finetune_etth1_sr_0.01_newModel_ETTh1_theta_500_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-04-09_08-17-29
 data=ETTh1
 
 # for subset_rand_ratio in 0.01 0.02 0.03 0.04 0.05 0.1 0.15 0.2 0.25 0.5 0.75 1
@@ -54,6 +54,7 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --quantile_flag 1 \
   --quantilies 0.25 0.5 0.75 \
   --output_interpretability \
+  --theta_dim 500 \
   --use_ims \
   --use_multi_gpu
 done

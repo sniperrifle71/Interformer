@@ -10,7 +10,7 @@ pred_len=96
 output_len=1440
 patch_len=96
 ckpt_path=UTSD4G_500THETA
-data=ETTh1
+data=ECL
 
 # for subset_rand_ratio in 0.01 0.02 0.03 0.04 0.05 0.1 0.15 0.2 0.25 0.5 0.75 1
 for subset_rand_ratio in 0.01 
@@ -25,11 +25,11 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --is_training 0 \
   --is_finetuning 1 \
   --seed 1 \
-  --root_path ../../../data/raw_data/ETT/ \
+  --root_path ../../../data/raw_data/ECL/ \
   --checkpoints ../../../data/newModel/checkpoints/ \
   --data_path $data.csv \
   --data $data \
-  --model_id etth1_sr_$subset_rand_ratio \
+  --model_id $data_sr_$subset_rand_ratio \
   --model $model_name \
   --features M \
   --seq_len $seq_len \
