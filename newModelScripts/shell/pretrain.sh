@@ -28,7 +28,7 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --checkpoints ../../../data/newModel/checkpoints/ \
   --data_path $data.csv \
   --data $data \
-  --model_id etth1_sr_$subset_rand_ratio \
+  --model_id UTSD-1G_sr_$subset_rand_ratio \
   --model $model_name \
   --features M \
   --seq_len $seq_len \
@@ -42,7 +42,7 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --d_model 256 \
   --d_ff 512 \
   --batch_size 512 \
-  --train_epochs 10 \
+  --train_epochs 2 \
   --learning_rate 3e-5 \
   --num_workers 4 \
   --patch_len $patch_len \

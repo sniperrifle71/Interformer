@@ -9,7 +9,7 @@ label_len=0
 pred_len=96
 output_len=1440
 patch_len=96
-ckpt_path=UTSD4G_500THETA
+ckpt_path=UTSD-1G_GENERIC
 data=ETTh1
 
 # for subset_rand_ratio in 0.01 0.02 0.03 0.04 0.05 0.1 0.15 0.2 0.25 0.5 0.75 1

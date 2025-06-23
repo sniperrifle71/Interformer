@@ -9,8 +9,8 @@ label_len=0
 pred_len=96
 output_len=1440
 patch_len=96
-ckpt_path=UTSD4G_500THETA
-data=ECL
+ckpt_path=forecast_finetune_etth1_sr_0.01_newModel_ETTh1_theta_500_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-04-09_08-17-29
+data=ETTh1
 
 # for subset_rand_ratio in 0.01 0.02 0.03 0.04 0.05 0.1 0.15 0.2 0.25 0.5 0.75 1
 for subset_rand_ratio in 0.01 
@@ -23,13 +23,13 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --task_name forecast \
   --model $model_name \
   --is_training 0 \
-  --is_finetuning 1 \
+  --is_finetuning 0 \
   --seed 1 \
-  --root_path ../../../data/raw_data/ECL/ \
+  --root_path ../../../data/raw_data/ETT/ \
   --checkpoints ../../../data/newModel/checkpoints/ \
   --data_path $data.csv \
   --data $data \
-  --model_id $data_sr_$subset_rand_ratio \
+  --model_id etth1_sr_$subset_rand_ratio \
   --model $model_name \
   --features M \
   --seq_len $seq_len \
@@ -52,9 +52,9 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --itr 1 \
   --gpu 0 \
   --quantile_flag 1 \
-  --theta_dim 500 \
   --quantilies 0.25 0.5 0.75 \
   --output_interpretability \
+  --theta_dim 500 \
   --use_ims \
   --use_multi_gpu
 done
