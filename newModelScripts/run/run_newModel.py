@@ -257,27 +257,10 @@ if __name__ == "__main__":
         if args.is_finetuning:
             for ii in range(args.itr):
                 # setting record of experiments
-                setting = "{}_{}_{}_{}_theta_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}".format(
-                    args.task_name,
-                    args.model_id,
-                    args.model,
+                setting = "Finetune_{}_{}_{}_Exp".format(
                     args.data,
-                    args.theta_dim,
-                    args.features,
-                    args.seq_len,
-                    args.label_len,
+                    args.ckpt_path,
                     args.pred_len,
-                    args.patch_len,
-                    args.d_model,
-                    args.n_heads,
-                    args.e_layers,
-                    args.d_layers,
-                    args.d_ff,
-                    args.factor,
-                    args.embed,
-                    args.distil,
-                    args.des,
-                    ii,
                 )
                 setting += datetime.now().strftime("%y-%m-%d_%H-%M-%S")
 
@@ -300,7 +283,7 @@ if __name__ == "__main__":
             
             for ii in range(args.itr):
                 # setting record of experiments
-                setting = "{}_{}_{}_{}_theta_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}".format(
+                setting = "{}_training_{}_{}_{}_theta_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}".format(
                     args.task_name,
                     args.model_id,
                     args.model,
@@ -343,7 +326,7 @@ if __name__ == "__main__":
                 torch.cuda.empty_cache()
         else:
             ii = 0
-            setting = "{}_{}_{}_{}_theta_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}".format(
+            setting = "{}_testing_{}_{}_{}_theta_{}_ft{}_sl{}_ll{}_pl{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}".format(
                 args.task_name,
                 args.model_id,
                 args.model,
