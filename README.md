@@ -23,10 +23,8 @@ Data stream analysis faces severe challenges from **concept drift**, where the u
 
 ## 🏗️ Architecture
 
-![Interformer Architecture](figures/architecture.png)  
-*(Ensure you place your Figure 1 from the paper here as `figures/architecture.png`)*
+![Interformer Architecture](methodology.png)  
 
-The model is trained with a dual objective: a forecasting loss (prediction MSE) and an interpretable loss (input reconstruction MSE).
 
 ---
 
@@ -40,62 +38,15 @@ For optimal performance and dependency resolution, we recommend utilizing `micro
 # Create and activate the environment
 micromamba create -n interformer python=3.10 -c conda-forge
 micromamba activate interformer
-
-# Install dependencies utilizing uv for rapid resolution
-pip install uv
-uv pip install -r requirements.txt
+pip install -r requirements.txt
 
 ```
 
-### 2. Data Preparation
 
-To reproduce the empirical results presented in the paper, you need to acquire both the pretraining dataset and the specific downstream datasets.
-
-* **Pretraining Data:** Download the **UTSD (Unified Time Series Dataset)** up to the 12G scale as specified in the scaling law tests. Place the data in `./data/UTSD/`.
-* **Downstream Data:** Download the standard benchmarks (**ETTh2, ETTm1, WTH, ECL, TRC, DeepMIMO**) and the synthetic **CakeRotation** dataset. Place them in `./data/downstream/`.
-
-Your project directory structure should be organized as follows:
-
-```text
-data/
-├── UTSD/
-│   └── ... (pretraining files)
-└── downstream/
-    ├── ETT-small/
-    ├── weather/
-    ├── electricity/
-    ├── traffic/
-    ├── DeepMIMO/
-    └── CakeRotation/
-
-```
 
 ---
 
-## 💻 Usage & Reproduction
 
-### Phase 1: Pretraining
-
-To pretrain the Interformer on the UTSD dataset to extract universally invariant physical structures:
-
-```bash
-bash scripts/pretrain_interformer.sh
-
-```
-
-### Phase 2: Downstream Finetuning & Online Streaming Evaluation
-
-To finetune the model (utilizing exactly 30% of the downstream data) and execute the strict online testing phase (batch size = 1, static forward inference):
-
-```bash
-# Example: Run evaluation on ETTh2 with a lookback window of 168 and forecast horizon of 24
-bash scripts/finetune_ETTh2.sh --pred_len 24 --seq_len 168
-
-```
-
-*(Detailed script configurations for all other datasets and horizon lengths are available in the `scripts/` directory).*
-
----
 
 ## 📊 Main Results Summary
 
@@ -111,7 +62,7 @@ We sincerely thank the authors of [Timer](https://github.com/thuml/Large-Time-Se
 
 If you find this framework or the proposed Extended Temporal Concept Drift (ETCD) formulations useful for your research, please consider citing our paper:
 
-
+```text
 @article{lin2026interformer,
   title={Interformer: Interpretable Large Time Series Model For Concept Drift Adaptation},
   author={Lin, Borong and Jin, Nanlin and Zhu, Xiaohui and Grasso, Floriana},
@@ -119,4 +70,4 @@ If you find this framework or the proposed Extended Temporal Concept Drift (ETCD
   year={2026},
   publisher={Elsevier}
 }
-
+```
