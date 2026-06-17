@@ -1,10 +1,4 @@
-非常抱歉下载组件无法正常工作，这可能是由于当前平台的交互限制导致的。
 
-没关系，您可以直接点击代码块右上角的“复制”按钮，然后在您的本地电脑上新建一个名为 `README.md` 的文件，将内容粘贴进去即可。
-
-以下是完整的 `README.md` 内容：
-
-```markdown
 # Interformer: Interpretable Large Time Series Model For Concept Drift Adaptation
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
