@@ -19,7 +19,7 @@ Data stream analysis faces severe challenges from **concept drift**, where the u
 
 ## 🏗️ Architecture
 
-![Interformer Architecture](figures/architecture.png)
+![Interformer Architecture](methodology.png)
 *(Please place your Figure 1 image here and ensure the path is correct)*
 
 The dual-objective training minimizes both a forecasting loss (prediction MSE) and an interpretable loss (input reconstruction MSE).
