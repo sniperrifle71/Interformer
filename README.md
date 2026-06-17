@@ -3,7 +3,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Paper](https://img.shields.io/badge/Paper-Knowledge--Based_Systems-B31B1B.svg)](#) > **🔔 Important Note to Reviewers (Knowledge-Based Systems):**
+
 > Welcome to the official repository for **Interformer**. Please note that while our codebase builds upon the robust LTSM pretrain-finetune data pipeline initially introduced by [Timer](https://github.com/thuml/Large-Time-Series-Model) to ensure standardized pretraining on UTSD, **this repository contains the novel and distinct implementation of Interformer**. 
 > 
 > Specifically, the core architectural innovations—including the **Interpretable Encoder (Intercoder)** and the **Residual-Focused Cross-Attention Decoder**—are entirely original to this work. These custom modules are explicitly defined and can be found in the `models/` and `layers/` directories.
@@ -57,17 +57,3 @@ Interformer demonstrates superior zero-shot generalization and conceptual robust
 ## 🤝 Acknowledgements
 
 We sincerely thank the authors of [Timer](https://github.com/thuml/Large-Time-Series-Model) for providing the foundational data-loading framework and UTSD curation. Their open-source contributions significantly accelerated the development of this research.
-
-## 📝 Citation
-
-If you find this framework or the proposed Extended Temporal Concept Drift (ETCD) formulations useful for your research, please consider citing our paper:
-
-```text
-@article{lin2026interformer,
-  title={Interformer: Interpretable Large Time Series Model For Concept Drift Adaptation},
-  author={Lin, Borong and Jin, Nanlin and Zhu, Xiaohui and Grasso, Floriana},
-  journal={Knowledge-Based Systems},
-  year={2026},
-  publisher={Elsevier}
-}
-```
