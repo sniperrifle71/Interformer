@@ -22,20 +22,4 @@ Data stream analysis faces severe challenges from **concept drift**, where the u
 ![Interformer Architecture](methodology.png)
 *(Please place your Figure 1 image here and ensure the path is correct)*
 
-The dual-objective training minimizes both a forecasting loss (prediction MSE) and an interpretable loss (input reconstruction MSE).
 
----
-
-## 🚀 Getting Started
-
-### 1. Environment Setup
-We recommend using `micromamba` for environment management and `uv` for lightning-fast dependency installation.
-
-```bash
-# Create and activate the environment
-micromamba create -n interformer python=3.10 -c conda-forge
-micromamba activate interformer
-
-# Install dependencies using uv
-pip install uv
-uv pip install -r requirements.txt
