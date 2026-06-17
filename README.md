@@ -20,6 +20,6 @@ Data stream analysis faces severe challenges from **concept drift**, where the u
 ## 🏗️ Architecture
 
 ![Interformer Architecture](methodology.png)
-*(Please place your Figure 1 image here and ensure the path is correct)*
+
 
 
