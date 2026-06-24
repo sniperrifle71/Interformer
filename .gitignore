@@ -166,3 +166,5 @@ data_loader_all.py
 /inference_results/
 /packages/
 /scripts/pretrain/
+/result_long_term_forecast.txt
+/README.md

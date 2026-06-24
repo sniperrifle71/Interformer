@@ -97,7 +97,6 @@ class Dataset_ETT_hour(Dataset):
         seq_y = self.data_y[r_begin:r_end]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
-
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
@@ -199,7 +198,7 @@ class Dataset_ETT_minute(Dataset):
 
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, flag='train', size=None,
-                 features='S', data_path='ETTh1.csv',
+                 features='M', data_path='ETTh1.csv',
                  target='OT', scale=True, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
         # info
@@ -234,10 +233,10 @@ class Dataset_Custom(Dataset):
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
-        cols = list(df_raw.columns)
-        cols.remove(self.target)
-        cols.remove('date')
-        df_raw = df_raw[['date'] + cols + [self.target]]
+        # cols = list(df_raw.columns)
+        # cols.remove(self.target)
+        # cols.remove('date')
+        # df_raw = df_raw[['date'] + cols + [self.target]]
         num_train = int(len(df_raw) * 0.7)
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
@@ -426,7 +425,7 @@ class UCRAnomalyloader(Dataset):
 All single-variate series in UTSD are divided into (input-output) windows with a uniform length based on S3.
 """
 class UTSDataset(Dataset):
-    def __init__(self, subset_name=r'UTSD-4G', flag='train', split=0.9,
+    def __init__(self, subset_name=r'UTSD-1G', flag='train', split=0.9,
                  input_len=None, output_len=None, scale=True, stride=1):
         self.input_len = input_len
         self.output_len = output_len

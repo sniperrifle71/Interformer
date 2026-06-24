@@ -117,6 +117,9 @@ class Model(nn.Module):
         if self.task_name == 'forecast':
             dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
             return dec_out  # [B, T, D]
+        if self.task_name == 'pretrain':
+            pass
+            
         if self.task_name == 'imputation':
             dec_out = self.imputation(
                 x_enc, x_mark_enc, x_dec, x_mark_dec, mask)

@@ -2,14 +2,14 @@ import torch
 from torch import nn
 import sys
 sys.path.append('..')
-from models import TimerBackbone, newModelBackbone
+from models import TimerBackbone, InterformerBackbone
 
 class Model(nn.Module):
     def __init__(self, configs):
         super().__init__()
         
         self.task_name = configs.task_name
-        # self.ckpt_path = configs.ckpt_path
+        self.ckpt_path = configs.ckpt_path
         self.patch_len = configs.patch_len
         self.stride = configs.stride
         self.d_model = configs.d_model
@@ -22,7 +22,7 @@ class Model(nn.Module):
 
         self.output_attention = configs.output_attention
 
-        self.backbone = newModelBackbone.Model(configs)
+        self.backbone = InterformerBackbone.Model(configs)
         self.encoder = self.backbone.encoder
         self.decoder = self.backbone.decoder
         self.dec_proj = self.backbone.dec_proj
@@ -32,22 +32,22 @@ class Model(nn.Module):
         self.raw_enc_embedding = self.backbone.raw_patch_embedding
         self.quantile_proj = self.backbone.quantile_proj
 
-        '''
-        if self.ckpt_path != '':
-            if self.ckpt_path == 'random':
-                print('loading model randomly')
-            else:
-                print('loading model: ', self.ckpt_path)
-                if self.ckpt_path.endswith('.pth'):
-                    self.backbone.load_state_dict(torch.load(self.ckpt_path))
-                elif self.ckpt_path.endswith('.ckpt'):
-                    sd = torch.load(self.ckpt_path, map_location="cpu")["state_dict"]
-                    sd = {k[6:]: v for k, v in sd.items()}
-                    self.backbone.load_state_dict(sd, strict=True)
+        
+        # if self.ckpt_path != '':
+        #     if self.ckpt_path == 'random':
+        #         print('loading model randomly')
+        #     else:
+        #         print('loading model: ', self.ckpt_path)
+        #         if self.ckpt_path.endswith('.pth'):
+        #             self.load_state_dict(torch.load(self.ckpt_path))
+        #         elif self.ckpt_path.endswith('.ckpt'):
+        #             sd = torch.load(self.ckpt_path, map_location="cpu")["state_dict"]
+        #             sd = {k[6:]: v for k, v in sd.items()}
+        #             self.load_state_dict(sd, strict=True)
 
-                else:
-                    raise NotImplementedError
-        '''
+        #         else:
+        #             raise NotImplementedError
+        
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         B, T, M = x_enc.shape # B: batch size, T: time steps, M: number of variables
@@ -74,7 +74,7 @@ class Model(nn.Module):
         dec_in = enc_in-enc_out
         
         # Reverse Normalization
-        dec_in = dec_in * stdev + means
+        # dec_in = dec_in * stdev + means
 
         dec_out = self.decoder(dec_in, raw_enc_in, x_mask=None, cross_mask=None)
         BM, N, D = dec_out.shape # BM=B*M, N=Number of Patch, D=d_model
@@ -94,13 +94,15 @@ class Model(nn.Module):
         dec_out = dec_out.reshape(B, M, T, Q).transpose(1, 2).transpose(2, 3)# [B, T, Q, M]
         enc_out = enc_out.reshape(B, M, -1).transpose(1, 2) # [B, T, M]
 
-        # 最终输出结果
+        # Final output
         enc_out = enc_out * stdev + means
+        backcast = backcast * stdev + means
         dec_out = dec_out + enc_out.unsqueeze(-2)
+
         # dec_out = dec_out * stdev + means
         if self.output_attention:
-            return dec_out, attns, backcast
-        return dec_out, backcast # [B, T, Q, M], [B, T, M]
+            return dec_out, attns, backcast, enc_out
+        return dec_out, backcast, enc_out # [B, T, Q, M], [B, T, M], [B, T, M]
     
 if __name__ == '__main__':
     configs = {
@@ -117,6 +119,6 @@ if __name__ == '__main__':
         'devices': 'cuda'
     }
     model = Model(configs)
-    # 打印模型中的所有参数及其名称
+    # Print all parameters and their names.
     for name, param in model.named_parameters():
         print(f"Layer: {name} | Size: {param.size()} | Values: {param}")

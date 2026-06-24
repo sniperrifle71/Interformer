@@ -9,7 +9,7 @@ import torch.distributed as dist
 import sys
 
 sys.path.append("../..")
-from exp.exp_newModel import Exp_newModel_forecast
+from exp.exp_interformer import Exp_Interformer_forecast
 from exp.exp_anomaly_detection import Exp_Anomaly_Detection
 from exp.exp_imputation import Exp_Imputation
 from utils.tools import HiddenPrints
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
         default="Timer",
-        help="model name, options: [Timer TrmEncoder]",
+        help="model name, options: [Timer TrmEncoder Interformer]",
     )
     parser.add_argument("--seed", type=int, default=0, help="random seed")
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoints",
         type=str,
-        default="../data/newModel/checkpoints/",
+        default="../data/Interformer/checkpoints/",
         help="location of model checkpoints",
     )
     parser.add_argument(
@@ -245,9 +245,9 @@ if __name__ == "__main__":
     elif args.task_name == "anomaly_detection":
         Exp = Exp_Anomaly_Detection
     elif args.task_name == "forecast":
-        Exp = Exp_newModel_forecast
+        Exp = Exp_Interformer_forecast
     elif args.task_name == "pretrain":
-        Exp = Exp_newModel_forecast
+        Exp = Exp_Interformer_forecast
     else:
         raise ValueError("task name not found")
 

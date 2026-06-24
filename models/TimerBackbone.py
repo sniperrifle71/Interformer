@@ -6,7 +6,7 @@ from layers.SelfAttention_Family import AttentionLayer, FullAttention
 from layers.Transformer_EncDec import Encoder, EncoderLayer
 
 """
-由于经过PatchEncoding, B = Batch size*M, L = Patch length, M = Number of patches 
+After patch encoding, B = batch size * M, L = patch length, M = number of patches.
 """
 class Model(nn.Module):
     def __init__(self, configs):
@@ -44,4 +44,3 @@ class Model(nn.Module):
 
         # Prediction Head
         self.proj = nn.Linear(self.d_model, configs.patch_len, bias=True)
-

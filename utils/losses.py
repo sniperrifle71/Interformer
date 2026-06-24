@@ -53,7 +53,7 @@ class forecast_backcast_qt_loss(nn.Module):
             if backcast is None or batch_x is None:
                 return forecast_loss
             backcast_loss = self.backcast_func(backcast, batch_x)
-            return forecast_loss + backcast_loss
+            return forecast_loss + backcast_loss, (forecast_loss, backcast_loss)
         
         else:
             # quantile loss
@@ -69,6 +69,6 @@ class forecast_backcast_qt_loss(nn.Module):
                 e = batch_y - ypred_rho
                 quantile_loss += torch.max(rho * e, (rho - 1) * e).unsqueeze(-2)
             quantile_loss = quantile_loss.mean()
-
-            return quantile_loss + backcast_loss + forecast_loss
+            return 0.25*quantile_loss + 0.5*backcast_loss + 0.25*forecast_loss, (forecast_loss, backcast_loss, quantile_loss)
+            # return backcast_loss, (forecast_loss, backcast_loss, quantile_loss)
          

@@ -1,35 +1,34 @@
 #!/bin/sh
 export HF_ENDPOINT=https://hf-mirror.com
 export HF_HOME=/home/borong/data/raw_data/huggingface
-model_name=newModel
-#7*96
+model_name=Interformer
+#15*96
 seq_len=1440
 #14*96, 1*96
 label_len=0
 pred_len=96
 output_len=1440
 patch_len=96
-ckpt_path=forecast_finetune_etth1_sr_0.01_newModel_ETTh1_theta_500_ftM_sl1440_ll0_pl96_pl96_dm256_nh8_el3_dl3_df512_fc3_ebtimeF_dtTrue_Exp25-04-09_08-17-29
-data=ETTh1
+# ckpt_path=checkpoints/Timer_forecast_1.0.ckpt
+data=UTSD
 
 # for subset_rand_ratio in 0.01 0.02 0.03 0.04 0.05 0.1 0.15 0.2 0.25 0.5 0.75 1
 for subset_rand_ratio in 0.01 
 do
-# finetune
+# train
 # num_workers = 4
-
-torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
-  --ckpt_path $ckpt_path \
-  --task_name forecast \
+# --ckpt_path $ckpt_path \
+torchrun --nnodes=1 --nproc_per_node=4 ../run/run_interformer.py \
+  --task_name pretrain \
   --model $model_name \
-  --is_training 0 \
+  --is_training 1 \
   --is_finetuning 0 \
   --seed 1 \
   --root_path ../../../data/raw_data/ETT/ \
-  --checkpoints ../../../data/newModel/checkpoints/ \
+  --checkpoints ../../../data/Interformer/checkpoints/ \
   --data_path $data.csv \
   --data $data \
-  --model_id etth1_sr_$subset_rand_ratio \
+  --model_id UTSD-1G_sr_$subset_rand_ratio \
   --model $model_name \
   --features M \
   --seq_len $seq_len \
@@ -43,7 +42,7 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --d_model 256 \
   --d_ff 512 \
   --batch_size 512 \
-  --finetune_epochs 10 \
+  --train_epochs 2 \
   --learning_rate 3e-5 \
   --num_workers 4 \
   --patch_len $patch_len \
@@ -53,7 +52,6 @@ torchrun --nnodes=1 --nproc_per_node=4 ../run/run_newModel.py \
   --gpu 0 \
   --quantile_flag 1 \
   --quantilies 0.25 0.5 0.75 \
-  --output_interpretability \
   --theta_dim 500 \
   --use_ims \
   --use_multi_gpu

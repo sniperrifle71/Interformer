@@ -14,7 +14,7 @@ def seasonality_model(thetas, t, device):
     s1 = torch.tensor(np.array([np.cos(2 * np.pi * i * t) for i in range(p1)])).float()  # H/2-1
     s2 = torch.tensor(np.array([np.sin(2 * np.pi * i * t) for i in range(p2)])).float()
     S = torch.cat([s1, s2])
-    return thetas.mm(S.to(device))# 矩阵乘法
+    return thetas.mm(S.to(device))  # Matrix multiplication
 
 def trend_model(thetas, t, device):
     if device != 'cpu':
@@ -23,7 +23,7 @@ def trend_model(thetas, t, device):
     p = thetas.size()[-1]
     assert p <= 4, 'thetas_dim is too big.'
     T = torch.tensor([t ** i for i in range(p)]).float()
-    return thetas.mm(T.to(device))# 矩阵乘法
+    return thetas.mm(T.to(device))  # Matrix multiplication
 
 def linspace(backcast_length, forecast_length):
     lin_space = np.linspace(-backcast_length, forecast_length, backcast_length + forecast_length)
@@ -136,6 +136,7 @@ class Encoder(nn.Module):
     def forward(self, x, attn_mask=None, tau=None, delta=None):
         # x [B, L, D]
         attns = []
+        x_layer_results = []
         if self.conv_layers is not None:
             for i, (attn_layer, interpreter_layer, conv_layer) in enumerate(zip(self.attn_layers, self.interpreter_layers, self.conv_layers)):
                 delta = delta if i == 0 else None
@@ -146,11 +147,17 @@ class Encoder(nn.Module):
             x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
             attns.append(attn)
         else:
+            
             for i, (attn_layer, interpreter_layer) in enumerate(zip(self.attn_layers, self.interpreter_layers)):
+                x_layer_input = x
                 delta = delta if i == 0 else None
                 x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
                 x = interpreter_layer(x)
+                x_layer_results.append(x)
+                x = x_layer_input - x
                 attns.append(attn)
+            # x = sum of x_layer_results
+            x = torch.stack(x_layer_results, dim=1).sum(dim=1)
             x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
             attns.append(attn)
 

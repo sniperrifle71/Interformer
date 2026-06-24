@@ -203,12 +203,11 @@ def visual_multi(true, preds=None, name='./pic/test.pdf'):
     """
     plt.figure()
     if preds is not None:
-        for i in range(len(preds)):
-            plt.plot(preds[i], label=f'Prediction_{i}', linewidth=2)
+        plt.plot(preds[1], label='Prediction', c='dodgerblue', linewidth=2)
+        plt.fill_between(range(len(preds[0])), preds[0], preds[2], color='dodgerblue', alpha=0.5)
     plt.plot(true, label='GroundTruth', c='tomato', linewidth=2)
     plt.legend(loc='upper left')
     plt.savefig(name, bbox_inches='tight')
-
 
 def attn_map(attn, path='./pic/attn_map.pdf'):
     """

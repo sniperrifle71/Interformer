@@ -211,6 +211,7 @@ class Exp_Forecast(Exp_Basic):
                 self.args.output_len = self.args.output_len_list[output_ptr]
                 test_data, test_loader = data_provider(self.args, flag='test')
                 for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+
                     batch_x = batch_x.float().to(self.device)
                     batch_y = batch_y.float().to(self.device)
 
@@ -290,3 +291,128 @@ class Exp_Forecast(Exp_Basic):
                 f.close()
 
         return
+
+    def train(self, setting):
+        train_data, train_loader = self._get_data(flag="train")
+        vali_data, vali_loader = self._get_data(flag="val")
+
+        path = os.path.join(self.args.checkpoints, setting)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        time_now = time.time()
+
+        train_steps = len(train_loader)
+        early_stopping = EarlyStopping(
+            patience=self.args.patience, verbose=True, delta=-5
+        )
+
+        model_optim = self._select_optimizer()
+        criterion = self._select_criterion()
+
+        print(
+            (
+                "Start training: Training data length: {}, Validation data length: {};"
+                + "{} model args: e_layers: {}, d_ff: {}, d_model: {}"
+            ).format(
+                len(train_data),
+                len(vali_data),
+                self.model.__class__.__name__,
+                self.args.e_layers,
+                self.args.d_ff,
+                self.args.d_model,
+            )
+        )
+
+        for epoch in range(self.args.train_epochs):
+            iter_count = 0
+            train_loss_list = []
+
+            self.model.train()
+            epoch_time = time.time()
+            print(
+                "Epoch: {}/{} starts, estimated cost time: {}".format(
+                    epoch + 1, self.args.train_epochs, time.time() - epoch_time
+                )
+            )
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(
+                train_loader
+            ):
+                iter_count += 1
+                model_optim.zero_grad()
+                batch_x = batch_x.float().to(self.device)
+                # batch_x_mark = batch_x_mark.float().to(self.device)
+
+                batch_y = batch_y.float().to(self.device)
+                # batch_y_mark = batch_y_mark.float().to(self.device)
+
+                # decoder input
+                # dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                # dec_inp = torch.cat([batch_y[:, :self.args.seq_len, :], dec_inp], dim=1).float().to(self.device)
+                # dec_inp_mark = None
+
+                outputs, backcast, enc_out = self.model(
+                    batch_x, None, None, None
+                )  # [B, T, Q, M], [B, T, M]
+                f_dim = -1 if self.args.features == "MS" else 0
+                outputs = outputs[:, -self.args.pred_len :, :, f_dim:]
+                backcast = backcast[:, : self.args.seq_len, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len :, f_dim:].to(self.device)
+                # batch_y_mark = batch_y_mark[:, -self.args.pred_len:, f_dim:].to(self.device)
+                loss_value, (forecast_loss, backcast_loss, quantile_loss) = criterion(
+                    outputs, batch_y, backcast, batch_x
+                )
+                # loss_sharpness = mse((outputs[:, 1:, :] - outputs[:, :-1, :]), (batch_y[:, 1:, :] - batch_y[:, :-1, :]))
+                train_loss = loss_value  # + loss_sharpness * 1e-5
+                train_loss_list.append(train_loss.item())
+
+                if (i + 1) % 100 == 0:
+                    print(
+                        "\titers: {0}, epoch: {1} | loss: {2:.7f} | forecast loss: {3:.7f} | backcast loss: {4:.7f}| quantile loss: {5:.7f}".format(
+                            i + 1,
+                            epoch + 1,
+                            train_loss.item(),
+                            forecast_loss.item(),
+                            backcast_loss.item(),
+                            quantile_loss.item(),
+                        )
+                    )
+                    speed = (time.time() - time_now) / iter_count
+                    left_time = speed * (
+                        (self.args.train_epochs - epoch) * train_steps - i
+                    )
+                    print(
+                        "\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(
+                            speed, left_time
+                        )
+                    )
+                    iter_count = 0
+                    time_now = time.time()
+
+                train_loss.backward()
+                model_optim.step()
+
+            train_loss = np.average(train_loss_list)
+            vali_loss = self.vali(vali_data, vali_loader, criterion=criterion)
+            print(
+                "Epoch: {0}/{1} ends | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
+                    epoch + 1, self.args.train_epochs, train_loss, vali_loss
+                )
+            )
+            early_stopping(vali_loss, self.model, path)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+
+            adjust_learning_rate(model_optim, epoch + 1, self.args)
+        print(
+            "Training finished,  best validation loss: {}".format(
+                early_stopping.val_loss_min
+            )
+        )
+
+        # best_model_path = path + '/' + 'checkpoint.pth'
+        # self.model.load_state_dict(torch.load(best_model_path, map_location = 'cuda:0'))
+        torch.save(self.model.state_dict(), path + "/" + "checkpoint.pth")
+
+        return self.model

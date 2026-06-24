@@ -140,6 +140,8 @@ if __name__ == '__main__':
         Exp = Exp_Anomaly_Detection
     elif args.task_name == 'forecast':
         Exp = Exp_Forecast
+    elif args.task_name == 'pretrain':
+        Exp = Exp_Forecast
     else:
         raise ValueError('task name not found')
 

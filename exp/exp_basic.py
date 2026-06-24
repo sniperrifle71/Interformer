@@ -2,7 +2,7 @@ import os
 
 import torch
 import torch.nn as nn
-from models import TrmEncoder, Timer, newModel
+from models import TrmEncoder, Timer, Interformer
 
 
 class Exp_Basic(object):
@@ -11,7 +11,8 @@ class Exp_Basic(object):
         self.model_dict = {
             'TrmEncoder': TrmEncoder,
             'Timer': Timer,
-            'newModel': newModel,
+            'Interformer': Interformer,
+            'newModel': Interformer,
         }
         self.vali_loss_func = nn.MSELoss()
         if self.args.use_multi_gpu:
